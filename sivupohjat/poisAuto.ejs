@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" href="inc/styles.css">
+</head>
+<body>
+	<%- include('osapohjat/header'); %>
+	<form action="/poisto" id="poista" method="POST">
+		<input id="id" type="text" placeholder="suorita poisto" name="id" />
+		<button type="submit" value="poista" id="pois">Poista auto</button>
+	</form>
+<%- include('osapohjat/footer'); %>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <%- include('osapohjat/header'); %>
 <h2>Lisää auto</h2>
 <div id="block">
-	<form action="/lisaa" id="" method="post">
+	<form action="/lisatty" id="" method="post">
 		<label for="merkki">Merkki:</label>
 		<input id="merkki" class="teinp" type="text" placeholder="" name="merkki" />
 		<br />
@@ -29,4 +29,4 @@
 		<button type="submit" value="Hae" onclick="submit()" id="Hae">Lisää</button>
 	</form>
 </div>
-<%- include('osapohjat/footer', {otsikko : nimi}); %>
+<%- include('osapohjat/footer'); %>

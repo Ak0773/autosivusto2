@@ -1,110 +1,115 @@
 const express = require('express')
+const mysql = require('mysql2')
 const path = require('path')
 const fs = require('fs')
 const { port, host } = require('./config.json')
 const autot = require('./autot.json')
-const { toUnicode } = require('punycode')
+//const { toUnicode } = require('punycode')
 const ejs = require('ejs')
 const app = express()
-const mysql = require('mysql2')
 const dbconfig = require('./dbconfig.json')
+//const { error } = require('console')
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'sivupohjat'))
 app.use('/inc', express.static('includes'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-const nimi = 'Dornaraj'
+const { haeKaikki, haku, lisays, pois } = require('./tietokantakerros')
+const { log, error } = require('console')
 
-// Apufunktiot
-newId = () => {
-  let max = 0
-  for (let auto of autot) {
-    if (auto.id > max) {
-      max = auto.id
-    }
+// const auto = require('./autot.json')
+// const { kaikkiautot, lisaaAuto, haeAuto, poistaAutoe }
+
+//app.get('/autot', (req, res) => {
+
+//const autojson = haeKaikki()
+//})
+
+/*res.render('autolista', {
+  autot: autot,
+  lukumaara: autot.length,*/
+// Pass the name variable to the template
+
+
+// ?hakutulos.ejs 
+app.post('/haku', async (req, res) => {
+  try {
+    const merkki = req.body.merkki
+    const hakuJson = await haku(merkki)
+    res.render('hakutulos', {
+      autot: hakuJson
+    })
   }
-
-  return max + 1
-}
-// Määritellään polut
-
-// ! tarkistus 12.5
-// Uusi polku, autolista
-// app.get('/', (req, res) => {
-//   res.render('autolista', {
-//     autot: autot,
-//     lukumaara: autot.length,
-//   });
-// });
-
-app.get('/', (req, res) => {
-  // Assuming 'nimi' is defined somewhere in your server logic
-  // Replace 'Your Name' with the actual name variable
-  res.render('autolista', {
-    autot: autot,
-    lukumaara: autot.length,
-    nimi: nimi // Pass the name variable to the template
-  })
+  catch (err) {
+    console.error(err)
+    //res.render('error', { viesti: error.viesti })
+    res.render(
+      "eiloydy"
+    )
+  }
 })
-
-//?hakutulos.ejs 
-app.post('/haku', (req, res) => {
-  const etsi = req.body.merkki
-  // Use req.body.merkki to get the search term
-  // Use req.body.merkki to get the search term
-  const vastaus = autot.filter(auto => (auto.merkki === etsi))
-
-  res.render('hakutulos', {
-    autot: vastaus,
-    lukumaara: vastaus.length,
-    nimi: nimi
-  })
+app.get("/poisAuto", function (req, res) {
+  res.render('poisAuto.ejs', {}); {
+  }
+})
+app.post('/poisto', async (req, res) => {
+  try {
+    const valittu = req.body.id
+    const autot = await pois(valittu)
+    res.render('autolista', {
+      autot: autot
+    })
+  }
+  catch (error) {
+    console.error(error)
+    res.send('error', { viesti: `autoa ei saatu pistettua` })
+  }
 })
 
 //? lisaa.ejs
 app.get("/lisaa", function (req, res) {
-  res.render('lisaa.ejs', {
-    nimi: nimi
-  }); {
+  res.render('lisaa.ejs', {}); {
   }
 })
 
 //?etu sivu
-app.get("/", function (req, res) {
+app.get("/", async (req, res) => {
 
-  res.render("/")
+  try {
+    const autotJson = await haeKaikki()
+    res.render('autolista', {
+      autot: autotJson,
+      //lukumaara: autot.length,
+    })
+  }
+  catch (err) {
+    throw err
+  }
 })
 
 //?autolista.ejs 
 app.get("/autolista", function (req, res) {
-  res.render("autolista.ejs", {
-    nimi: nimi
-  })
+  res.render("autolista.ejs", {})
 })
 
 //* lisää json 
-app.post('/lisaa', (req, res) => {
-  const uusiauto = {
-    id: uusiauto(),
-    merkki: req.body.merkki,
-    malli: req.body.malli,
-    vuosimalli: req.body.vuosimalli,
-    omistaja: req.body.omistaja
+app.post('/lisatty', async (req, res) => {
+  try {
+    const merkki = req.body.merkki
+    const malli = req.body.malli
+    const vuosimalli = req.body.vuosimalli
+    const omistaja = req.body.omistaja
+    await lisays(merkki, malli, vuosimalli, omistaja)
+    res.render('lisatty.ejs')
+  } catch (error) {
+    console.error(error)
+    // res.render('error', { viesti: error.viesti })
+    res.render(
+      "eilisays"
+    )
   }
 
-  // Lisää uusi auto autot-listaan
-  autot.push(uusiauto)
 
-  // Tallenna autot.json-tiedosto
-  fs.writeFile('autot.json', JSON.stringify(autot, null, 2), err => {
-    if (err) {
-      console.error(err)
-      res.status(500).send('Internal Server Error')
-    } else {
-      // Ohjaa sivusto takaisin autolista-sivulle
-      res.redirect('/')
-    }
-  })
 })
 
 // JSON API-listaus
@@ -208,6 +213,13 @@ app.put('/autot/:id', (req, res) => {
       res.json(uusi)
     }
   }
+})
+app.get("/poisatty", function (req, res) {
+  const valittu = req.query.id
+  if (valittu) {
+    pois(valittu)
+  }
+  res.send("Poisto onnistui")
 })
 
 app.delete('/autot/:id', (req, res) => {
